@@ -33,6 +33,7 @@ source("modules/schema_selector_module.R")
 source("modules/table_structure_module.R")
 source("modules/data_preview_module.R")
 source("modules/table_compare_module.R")
+source("modules/settings_module.R")
 
 # ============================================================
 # 3. Theme
@@ -318,6 +319,15 @@ ui <- page_navbar(
     tableCompareUI("compare")
   ),
 
+  # ----------------------------------------------------------------
+  # Tab 5 – Settings
+  # ----------------------------------------------------------------
+  nav_panel(
+    title = tagList(icon("gear"), " Settings"),
+    value = "settings",
+    settingsUI("settings")
+  ),
+
   # Navbar right-side spacer / version tag
   nav_spacer(),
   nav_item(
@@ -457,6 +467,16 @@ server <- function(input, output, session) {
   # ------------------------------------------------------------------
 
   tableCompareServer("compare", dev_con = dev_con, prod_con = prod_con)
+
+  # ------------------------------------------------------------------
+  # Settings module
+  # ------------------------------------------------------------------
+
+  settingsServer(
+    "settings",
+    dev_connect_fn  = dev_conn_res$connect,
+    prod_connect_fn = prod_conn_res$connect
+  )
 
   # ------------------------------------------------------------------
   # Cleanup: disconnect on session end

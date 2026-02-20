@@ -210,6 +210,8 @@ dbConnectionServer <- function(id, env_prefix) {
     })
 
     # --- Return reactive handles ---
-    list(con = con, status = con_status)
+    # `connect` is exposed so external callers (e.g. Settings module) can
+    # trigger a reconnection after updating environment variables.
+    list(con = con, status = con_status, connect = do_connect)
   })
 }
