@@ -74,7 +74,7 @@ dbConnectionServer <- function(id, env_prefix) {
     }
 
     safe_disconnect <- function() {
-      old <- con()
+      old <- isolate(con())
       if (!is.null(old)) {
         tryCatch(
           if (DBI::dbIsValid(old)) DBI::dbDisconnect(old),
