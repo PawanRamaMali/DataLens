@@ -68,7 +68,7 @@ explorer_layout <- function(env_label, env_class, conn_id, selector_id,
       div(
         class = paste("fw-bold mb-3 d-flex align-items-center gap-2 px-1",
                       env_class),
-        icon(if (env_label == "DEV") "code-branch" else "server"),
+        icon(switch(env_label, DEV = "code-branch", UAT = "flask", "server")),
         paste(env_label, "Environment")
       ),
 
@@ -114,6 +114,7 @@ ui <- page_navbar(
   collapsible = TRUE,
 
   useShinyjs(),
+  tags$style(HTML(".text-purple { color: #6f42c1 !important; }")),
 
   # ----------------------------------------------------------------
   # Tab 1 – Overview
@@ -147,7 +148,7 @@ ui <- page_navbar(
 
         # DEV card
         div(
-          class = "col-md-6",
+          class = "col-md-4",
           div(
             class = "card shadow-sm h-100",
             div(
@@ -171,9 +172,36 @@ ui <- page_navbar(
           )
         ),
 
+        # UAT card
+        div(
+          class = "col-md-4",
+          div(
+            class = "card shadow-sm h-100",
+            div(
+              class = "card-header text-white d-flex align-items-center gap-2",
+              style = "background-color: #6f42c1;",
+              icon("flask"), strong("UAT Environment")
+            ),
+            div(
+              class = "card-body",
+              uiOutput("overview_uat_status"),
+              hr(class = "my-2"),
+              tags$dl(
+                class = "row small text-muted mb-0",
+                tags$dt(class = "col-4", "Host"),
+                tags$dd(class = "col-8", code(Sys.getenv("UAT_HOST", "not set"))),
+                tags$dt(class = "col-4", "Database"),
+                tags$dd(class = "col-8", code(Sys.getenv("UAT_DB", "not set"))),
+                tags$dt(class = "col-4", "User"),
+                tags$dd(class = "col-8", code(Sys.getenv("UAT_USER", "not set")))
+              )
+            )
+          )
+        ),
+
         # PROD card
         div(
-          class = "col-md-6",
+          class = "col-md-4",
           div(
             class = "card shadow-sm h-100",
             div(
@@ -311,7 +339,24 @@ ui <- page_navbar(
   ),
 
   # ----------------------------------------------------------------
-  # Tab 4 – Compare
+  # Tab 4 – UAT Explorer
+  # ----------------------------------------------------------------
+  nav_panel(
+    title = tagList(icon("flask"), " UAT"),
+    value = "uat_explorer",
+    explorer_layout(
+      env_label    = "UAT",
+      env_class    = "text-purple",
+      conn_id      = "uat_conn",
+      selector_id  = "uat_selector",
+      structure_id = "uat_structure",
+      data_id      = "uat_data",
+      header_id    = "uat_header"
+    )
+  ),
+
+  # ----------------------------------------------------------------
+  # Tab 5 – Compare
   # ----------------------------------------------------------------
   nav_panel(
     title = tagList(icon("arrows-left-right"), " Compare"),
@@ -349,9 +394,11 @@ server <- function(input, output, session) {
   # ------------------------------------------------------------------
 
   dev_conn_res  <- dbConnectionServer("dev_conn",  env_prefix = "DEV")
+  uat_conn_res  <- dbConnectionServer("uat_conn",  env_prefix = "UAT")
   prod_conn_res <- dbConnectionServer("prod_conn", env_prefix = "PROD")
 
   dev_con  <- dev_conn_res$con
+  uat_con  <- uat_conn_res$con
   prod_con <- prod_conn_res$con
 
   # ------------------------------------------------------------------
@@ -374,6 +421,7 @@ server <- function(input, output, session) {
   }
 
   output$overview_dev_status  <- make_status_ui(dev_conn_res$status)
+  output$overview_uat_status  <- make_status_ui(uat_conn_res$status)
   output$overview_prod_status <- make_status_ui(prod_conn_res$status)
 
   # ------------------------------------------------------------------
@@ -463,6 +511,49 @@ server <- function(input, output, session) {
   })
 
   # ------------------------------------------------------------------
+  # UAT Explorer modules
+  # ------------------------------------------------------------------
+
+  uat_sel <- schemaSelectorServer("uat_selector", con = uat_con)
+
+  tableStructureServer(
+    "uat_structure",
+    con    = uat_con,
+    schema = uat_sel$schema,
+    table  = uat_sel$table
+  )
+
+  dataPreviewServer(
+    "uat_data",
+    con    = uat_con,
+    schema = uat_sel$schema,
+    table  = uat_sel$table
+  )
+
+  output$uat_header <- renderUI({
+    sch <- uat_sel$schema()
+    tbl <- uat_sel$table()
+    if (!nzchar(sch %||% "") || !nzchar(tbl %||% "")) return(NULL)
+    div(
+      class = "mb-3 pb-2 border-bottom",
+      h5(
+        class = "d-flex align-items-center gap-2 mb-0",
+        span(class = "badge text-white", style = "background-color:#6f42c1;", "UAT"),
+        code(paste0(sch, ".", tbl)),
+        uiOutput("uat_row_count_badge", inline = TRUE)
+      )
+    )
+  })
+
+  output$uat_row_count_badge <- renderUI({
+    cnt <- uat_sel$row_count()
+    if (is.null(cnt)) return(NULL)
+    if (is.na(cnt))   return(span(class = "badge bg-danger ms-1", "count error"))
+    span(class = "badge bg-light text-dark border ms-1",
+         format(cnt, big.mark = ","), " rows")
+  })
+
+  # ------------------------------------------------------------------
   # Compare module
   # ------------------------------------------------------------------
 
@@ -475,6 +566,7 @@ server <- function(input, output, session) {
   settingsServer(
     "settings",
     dev_connect_fn  = dev_conn_res$connect,
+    uat_connect_fn  = uat_conn_res$connect,
     prod_connect_fn = prod_conn_res$connect
   )
 
@@ -483,7 +575,7 @@ server <- function(input, output, session) {
   # ------------------------------------------------------------------
 
   session$onSessionEnded(function() {
-    for (con_rv in list(dev_con, prod_con)) {
+    for (con_rv in list(dev_con, uat_con, prod_con)) {
       conn <- tryCatch(isolate(con_rv()), error = function(e) NULL)
       if (!is.null(conn)) {
         tryCatch(

@@ -96,13 +96,13 @@ settingsUI <- function(id) {
       )
     ),
 
-    # DEV + PROD cards
+    # DEV + UAT + PROD cards
     div(
       class = "row g-4",
 
       # ---- DEV ----
       div(
-        class = "col-xl-6",
+        class = "col-xl-4",
         div(
           class = "card shadow-sm h-100",
           div(
@@ -131,9 +131,41 @@ settingsUI <- function(id) {
         )
       ),
 
+      # ---- UAT ----
+      div(
+        class = "col-xl-4",
+        div(
+          class = "card shadow-sm h-100",
+          div(
+            class = "card-header text-white d-flex align-items-center gap-2",
+            style = "background-color: #6f42c1;",
+            icon("flask"),
+            strong("UAT Database")
+          ),
+          div(
+            class = "card-body",
+            .cred_fields(ns, "uat", "UAT"),
+            div(
+              class = "d-flex gap-2 mt-3 flex-wrap",
+              actionButton(
+                ns("save_uat"),
+                label = tagList(icon("floppy-disk"), " Save & Connect"),
+                class = "btn btn-success"
+              ),
+              actionButton(
+                ns("test_uat"),
+                label = tagList(icon("plug"), " Test Connection"),
+                class = "btn btn-outline-secondary"
+              )
+            ),
+            div(class = "mt-3", uiOutput(ns("uat_status")))
+          )
+        )
+      ),
+
       # ---- PROD ----
       div(
-        class = "col-xl-6",
+        class = "col-xl-4",
         div(
           class = "card shadow-sm h-100",
           div(
@@ -183,7 +215,8 @@ settingsUI <- function(id) {
             ),
             tags$tbody(
               lapply(
-                c("DEV_DB", "DEV_HOST", "DEV_USER", "DEV_PORT",
+                c("DEV_DB",  "DEV_HOST",  "DEV_USER",  "DEV_PORT",
+                  "UAT_DB",  "UAT_HOST",  "UAT_USER",  "UAT_PORT",
                   "PROD_DB", "PROD_HOST", "PROD_USER", "PROD_PORT"),
                 function(var) {
                   val <- Sys.getenv(var, unset = "")
@@ -201,7 +234,7 @@ settingsUI <- function(id) {
         ),
         div(
           class = "p-2 border-top small text-muted",
-          icon("lock"), " Password variables (DEV_PASS, PROD_PASS) are not displayed."
+          icon("lock"), " Password variables (DEV_PASS, UAT_PASS, PROD_PASS) are not displayed."
         )
       )
     )
@@ -210,7 +243,7 @@ settingsUI <- function(id) {
 
 # ---- Server --------------------------------------------------------------
 
-settingsServer <- function(id, dev_connect_fn, prod_connect_fn) {
+settingsServer <- function(id, dev_connect_fn, uat_connect_fn, prod_connect_fn) {
   moduleServer(id, function(input, output, session) {
 
     # ---- Shared helpers --------------------------------------------------
@@ -328,6 +361,40 @@ settingsServer <- function(id, dev_connect_fn, prod_connect_fn) {
 
       result <- test_connection("dev")
       output$dev_status <- renderUI(status_alert(result$ok, result$msg))
+    })
+
+    # ---- UAT: Save & Connect ---------------------------------------------
+
+    observeEvent(input$save_uat, {
+      err <- validate_fields("uat")
+
+      if (!is.null(err)) {
+        output$uat_status <- renderUI(status_alert(FALSE, err))
+        return()
+      }
+
+      apply_env_vars("uat", "UAT")
+
+      success <- tryCatch(uat_connect_fn(), error = function(e) FALSE)
+
+      output$uat_status <- renderUI(
+        status_alert(success,
+          if (success) "UAT environment variables saved and connected."
+          else         "Variables saved but connection failed \u2014 check credentials.")
+      )
+    })
+
+    # ---- UAT: Test -------------------------------------------------------
+
+    observeEvent(input$test_uat, {
+      err <- validate_fields("uat")
+      if (!is.null(err)) {
+        output$uat_status <- renderUI(status_alert(FALSE, err))
+        return()
+      }
+
+      result <- test_connection("uat")
+      output$uat_status <- renderUI(status_alert(result$ok, result$msg))
     })
 
     # ---- PROD: Save & Connect --------------------------------------------
