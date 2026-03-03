@@ -114,7 +114,7 @@ backupUI <- function(id) {
                             choices = c("DEV", "UAT", "PROD"), width = "100%"),
 
                 selectInput(ns("bkp_schema"), "Source Schema",
-                            choices = c("\u2014 Loading \u2014" = ""),
+                            choices = c("-- Loading --" = ""),
                             width = "100%"),
 
                 # Tables with Select All / None links
@@ -127,7 +127,7 @@ backupUI <- function(id) {
                       actionLink(ns("bkp_none"), "None"))
                 ),
                 selectInput(ns("bkp_tables"), label = NULL,
-                            choices  = c("\u2014 Select schema first \u2014" = ""),
+                            choices  = c("-- Select schema first --" = ""),
                             multiple = TRUE, width = "100%",
                             selectize = FALSE, size = 7),
 
@@ -221,7 +221,7 @@ backupUI <- function(id) {
                   div(
                     class = "flex-grow-1",
                     selectInput(ns("rst_backup_schema"), "Backup Schema (source)",
-                                choices = c("\u2014 Loading \u2014" = ""),
+                                choices = c("-- Loading --" = ""),
                                 width = "100%")
                   ),
                   actionButton(ns("btn_refresh_rst"), tagList(icon("rotate")),
@@ -230,7 +230,7 @@ backupUI <- function(id) {
                 ),
 
                 selectInput(ns("rst_target_schema"), "Target Schema (destination)",
-                            choices = c("\u2014 Loading \u2014" = ""),
+                            choices = c("-- Loading --" = ""),
                             width = "100%"),
 
                 # Tables
@@ -243,7 +243,7 @@ backupUI <- function(id) {
                       actionLink(ns("rst_none"), "None"))
                 ),
                 selectInput(ns("rst_tables"), label = NULL,
-                            choices  = c("\u2014 Select backup schema \u2014" = ""),
+                            choices  = c("-- Select backup schema --" = ""),
                             multiple = TRUE, width = "100%",
                             selectize = FALSE, size = 6),
 
@@ -258,7 +258,7 @@ backupUI <- function(id) {
                     radioButtons(
                       ns("rst_mode"), label = NULL,
                       choices = c(
-                        "Create new tables (safe \u2014 fails if table exists)" = "create",
+                        "Create new tables (safe -- fails if table exists)" = "create",
                         "Overwrite existing (TRUNCATE + INSERT, transactional)"  = "overwrite"
                       ),
                       selected = "create"
@@ -355,14 +355,14 @@ backupServer <- function(id, connections) {
       env <- input$bkp_env
       if (!is_valid(env)) {
         updateSelectInput(session, "bkp_schema",
-                          choices = c("\u2014 Not connected \u2014" = ""))
+                          choices = c("-- Not connected --" = ""))
         return()
       }
       tryCatch({
         schemas <- DBI::dbGetQuery(conn_of(env),
           "SELECT schema_name FROM information_schema.schemata ORDER BY schema_name")
         updateSelectInput(session, "bkp_schema",
-                          choices = c("\u2014 Select schema \u2014" = "",
+                          choices = c("-- Select schema --" = "",
                                       schemas$schema_name))
       }, error = function(e) NULL)
     }) |> bindEvent(input$bkp_env,
@@ -419,7 +419,7 @@ backupServer <- function(id, connections) {
 
       conn <- conn_of(env)
       .log(bkp_log, "info", paste0("Starting backup [", env, "]: ",
-                                    src_schema, " \u2192 ", dest))
+                                    src_schema, " -> ", dest))
       .log(bkp_log, "info", paste("Tables:", paste(tables, collapse = ", ")))
 
       # Create destination schema
@@ -452,11 +452,11 @@ backupServer <- function(id, connections) {
             sprintf("SELECT COUNT(*) AS n FROM %s.%s", q_dest, q_tbl))$n
 
           .log(bkp_log, "ok",
-               sprintf("  \u2713 %-35s  %s rows", tbl, format(n, big.mark = ",")))
+               sprintf("  [OK] %-35s  %s rows", tbl, format(n, big.mark = ",")))
           ok_n <- ok_n + 1L
 
         }, error = function(e) {
-          .log(bkp_log, "error", sprintf("  \u2717 %-35s  %s", tbl, e$message))
+          .log(bkp_log, "error", sprintf("  [FAIL] %-35s  %s", tbl, e$message))
           fail_n <<- fail_n + 1L
         })
       }
@@ -502,13 +502,13 @@ backupServer <- function(id, connections) {
                        sprintf("SELECT * FROM %s.%s", q_sch, q_tbl))
             data_list[[tbl]] <- df
             .log(bkp_log, "ok",
-                 sprintf("  \u2713 %-35s  %s rows \xd7 %s cols",
+                 sprintf("  [OK] %-35s  %s rows x %s cols",
                          tbl,
                          format(nrow(df), big.mark = ","),
                          ncol(df)))
           }, error = function(e) {
             data_list[[tbl]] <<- NULL
-            .log(bkp_log, "error", sprintf("  \u2717 %-35s  %s", tbl, e$message))
+            .log(bkp_log, "error", sprintf("  [FAIL] %-35s  %s", tbl, e$message))
           })
         }
 
@@ -537,9 +537,9 @@ backupServer <- function(id, connections) {
       env <- input$rst_env
       if (!is_valid(env)) {
         updateSelectInput(session, "rst_backup_schema",
-                          choices = c("\u2014 Not connected \u2014" = ""))
+                          choices = c("-- Not connected --" = ""))
         updateSelectInput(session, "rst_target_schema",
-                          choices = c("\u2014 Not connected \u2014" = ""))
+                          choices = c("-- Not connected --" = ""))
         return()
       }
       conn <- conn_of(env)
@@ -554,9 +554,9 @@ backupServer <- function(id, connections) {
 
         updateSelectInput(session, "rst_backup_schema",
           choices = if (nrow(bkp_schemas) > 0)
-            c("\u2014 Select backup \u2014" = "", bkp_schemas$schema_name)
+            c("-- Select backup --" = "", bkp_schemas$schema_name)
           else
-            c("\u2014 No backup schemas found \u2014" = "")
+            c("-- No backup schemas found --" = "")
         )
 
         # All non-backup, non-system schemas as restore targets
@@ -569,7 +569,7 @@ backupServer <- function(id, connections) {
           params = list(paste0(BACKUP_PREFIX, "%")))
 
         updateSelectInput(session, "rst_target_schema",
-                          choices = c("\u2014 Select target \u2014" = "",
+                          choices = c("-- Select target --" = "",
                                       tgt_schemas$schema_name))
       }, error = function(e) NULL)
     }
@@ -630,7 +630,7 @@ backupServer <- function(id, connections) {
 
       conn <- conn_of(env)
       .log(rst_log, "info",
-           sprintf("Starting restore [%s]: %s \u2192 %s [mode: %s]",
+           sprintf("Starting restore [%s]: %s -> %s [mode: %s]",
                    env, backup_schema, target_schema, mode))
 
       ok_n   <- 0L
@@ -663,7 +663,7 @@ backupServer <- function(id, connections) {
                 n <- DBI::dbGetQuery(conn,
                   sprintf("SELECT COUNT(*) AS n FROM %s.%s", q_dest, q_tbl))$n
                 .log(rst_log, "ok",
-                     sprintf("  \u21ba %-35s  %s rows (overwritten)",
+                     sprintf("  [R] %-35s  %s rows (overwritten)",
                              tbl, format(n, big.mark = ",")))
               } else {
                 DBI::dbExecute(conn,
@@ -672,7 +672,7 @@ backupServer <- function(id, connections) {
                 n <- DBI::dbGetQuery(conn,
                   sprintf("SELECT COUNT(*) AS n FROM %s.%s", q_dest, q_tbl))$n
                 .log(rst_log, "ok",
-                     sprintf("  \u2713 %-35s  %s rows (created)",
+                     sprintf("  [OK] %-35s  %s rows (created)",
                              tbl, format(n, big.mark = ",")))
               }
               ok_n <<- ok_n + 1L
@@ -683,7 +683,7 @@ backupServer <- function(id, connections) {
                        ok_n, length(tables)))
         }, error = function(e) {
           .log(rst_log, "error",
-               paste("Transaction rolled back \u2014 no changes applied:", e$message))
+               paste("Transaction rolled back -- no changes applied:", e$message))
         })
 
       } else {
@@ -700,11 +700,11 @@ backupServer <- function(id, connections) {
             n <- DBI::dbGetQuery(conn,
               sprintf("SELECT COUNT(*) AS n FROM %s.%s", q_dest, q_tbl))$n
             .log(rst_log, "ok",
-                 sprintf("  \u2713 %-35s  %s rows", tbl, format(n, big.mark = ",")))
+                 sprintf("  [OK] %-35s  %s rows", tbl, format(n, big.mark = ",")))
             ok_n <- ok_n + 1L
           }, error = function(e) {
             .log(rst_log, "error",
-                 sprintf("  \u2717 %-35s  %s", tbl, e$message))
+                 sprintf("  [FAIL] %-35s  %s", tbl, e$message))
             fail_n <<- fail_n + 1L
           })
         }

@@ -91,7 +91,7 @@ dataPreviewServer <- function(id, con, schema, table) {
       sch   <- schema()
       tbl   <- table()
 
-      load_status(list(ok = TRUE, msg = "Loading\u2026"))
+      load_status(list(ok = TRUE, msg = "Loading..."))
 
       tryCatch({
         q_sch  <- DBI::dbQuoteIdentifier(conn, sch)
@@ -101,7 +101,7 @@ dataPreviewServer <- function(id, con, schema, table) {
 
         load_status(list(
           ok  = TRUE,
-          msg = sprintf("Loaded %s rows \u00d7 %s columns",
+          msg = sprintf("Loaded %s rows x %s columns",
                         format(nrow(df), big.mark = ","),
                         ncol(df))
         ))
@@ -119,7 +119,7 @@ dataPreviewServer <- function(id, con, schema, table) {
         div(
           class = "alert alert-info",
           icon("circle-info"),
-          "  Select a schema and table, then click \u2018Load Data\u2019."
+          "  Select a schema and table, then click 'Load Data'."
         )
       }
     })

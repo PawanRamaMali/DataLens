@@ -22,7 +22,7 @@ schemaSelectorUI <- function(id) {
         selectInput(
           ns("schema"),
           label   = NULL,
-          choices = c("\u2014 Select schema \u2014" = ""),
+          choices = c("-- Select schema --" = ""),
           width   = "100%"
         ),
         actionButton(
@@ -43,7 +43,7 @@ schemaSelectorUI <- function(id) {
         selectInput(
           ns("table"),
           label   = NULL,
-          choices = c("\u2014 Select table \u2014" = ""),
+          choices = c("-- Select table --" = ""),
           width   = "100%"
         ),
         uiOutput(ns("row_count_ui"))
@@ -86,7 +86,7 @@ schemaSelectorServer <- function(id, con) {
     )
 
     observe({
-      choices <- c("\u2014 Select schema \u2014" = "", schemas())
+      choices <- c("-- Select schema --" = "", schemas())
       updateSelectInput(session, "schema", choices = choices)
     })
 
@@ -116,7 +116,7 @@ schemaSelectorServer <- function(id, con) {
     )
 
     observe({
-      choices <- c("\u2014 Select table \u2014" = "", tables())
+      choices <- c("-- Select table --" = "", tables())
       updateSelectInput(session, "table", choices = choices)
     })
 

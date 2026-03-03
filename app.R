@@ -422,7 +422,7 @@ server <- function(input, output, session) {
         connected    = span(class = "badge bg-success fs-6",   tagList(icon("circle-check"),  " Connected")),
         disconnected = span(class = "badge bg-secondary fs-6", tagList(icon("circle-xmark"),  " Disconnected")),
         connecting   = span(class = "badge bg-warning fs-6 text-dark",
-                            tagList(icon("spinner"),      " Connecting\u2026")),
+                            tagList(icon("spinner"),      " Connecting...")),
         error        = span(class = "badge bg-danger fs-6",    tagList(icon("triangle-exclamation"), " Error")),
         span(class = "badge bg-secondary", "Unknown")
       )

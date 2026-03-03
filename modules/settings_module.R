@@ -346,7 +346,7 @@ settingsServer <- function(id, dev_connect_fn, uat_connect_fn, prod_connect_fn) 
       output$dev_status <- renderUI(
         status_alert(success,
           if (success) "DEV environment variables saved and connected."
-          else         "Variables saved but connection failed \u2014 check credentials.")
+          else         "Variables saved but connection failed -- check credentials.")
       )
     })
 
@@ -380,7 +380,7 @@ settingsServer <- function(id, dev_connect_fn, uat_connect_fn, prod_connect_fn) 
       output$uat_status <- renderUI(
         status_alert(success,
           if (success) "UAT environment variables saved and connected."
-          else         "Variables saved but connection failed \u2014 check credentials.")
+          else         "Variables saved but connection failed -- check credentials.")
       )
     })
 
@@ -414,7 +414,7 @@ settingsServer <- function(id, dev_connect_fn, uat_connect_fn, prod_connect_fn) 
       output$prod_status <- renderUI(
         status_alert(success,
           if (success) "PROD environment variables saved and connected."
-          else         "Variables saved but connection failed \u2014 check credentials.")
+          else         "Variables saved but connection failed -- check credentials.")
       )
     })
 

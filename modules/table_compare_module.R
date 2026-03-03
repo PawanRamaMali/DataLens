@@ -26,13 +26,13 @@ tableCompareUI <- function(id) {
             selectInput(
               ns("cmp_schema"),
               label   = "Schema (from DEV)",
-              choices = c("\u2014 Loading \u2014" = ""),
+              choices = c("-- Loading --" = ""),
               width   = "100%"
             ),
             selectInput(
               ns("cmp_table"),
               label   = "Table",
-              choices = c("\u2014 Select schema first \u2014" = ""),
+              choices = c("-- Select schema first --" = ""),
               width   = "100%"
             ),
             div(
@@ -135,7 +135,7 @@ tableCompareServer <- function(id, dev_con, prod_con) {
           "SELECT schema_name FROM information_schema.schemata ORDER BY schema_name"
         )
         updateSelectInput(session, "cmp_schema",
-                          choices = c("\u2014 Select schema \u2014" = "",
+                          choices = c("-- Select schema --" = "",
                                       schemas$schema_name))
       }, error = function(e) NULL)
     }) |> bindEvent(dev_con(), input$btn_refresh_schemas, ignoreNULL = FALSE)
@@ -154,7 +154,7 @@ tableCompareServer <- function(id, dev_con, prod_con) {
           params = list(input$cmp_schema)
         )
         updateSelectInput(session, "cmp_table",
-                          choices = c("\u2014 Select table \u2014" = "",
+                          choices = c("-- Select table --" = "",
                                       tbls$table_name))
       }, error = function(e) NULL)
     })
@@ -296,7 +296,7 @@ tableCompareServer <- function(id, dev_con, prod_con) {
           return(data.frame(
             Column  = col,
             Issue   = "Missing in DEV",
-            DEV     = "\u2014",
+            DEV     = "--",
             PROD    = p$data_type,
             stringsAsFactors = FALSE
           ))
@@ -306,7 +306,7 @@ tableCompareServer <- function(id, dev_con, prod_con) {
             Column  = col,
             Issue   = "Missing in PROD",
             DEV     = d$data_type,
-            PROD    = "\u2014",
+            PROD    = "--",
             stringsAsFactors = FALSE
           ))
         }
@@ -335,7 +335,7 @@ tableCompareServer <- function(id, dev_con, prod_con) {
 
       if (is.null(diff_df) || nrow(diff_df) == 0) {
         diff_df <- data.frame(
-          Message = "\u2705 No structural differences found \u2014 DEV and PROD match."
+          Message = "[OK] No structural differences found -- DEV and PROD match."
         )
       }
 

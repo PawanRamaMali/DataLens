@@ -178,7 +178,7 @@ dbConnectionServer <- function(id, env_prefix) {
       switch(con_status(),
         connected    = span(class = "badge bg-success",          "Connected"),
         disconnected = span(class = "badge bg-secondary",         "Disconnected"),
-        connecting   = span(class = "badge bg-warning text-dark", "Connecting\u2026"),
+        connecting   = span(class = "badge bg-warning text-dark", "Connecting..."),
         error        = span(class = "badge bg-danger",            "Error"),
         span(class = "badge bg-secondary", "Unknown")
       )
