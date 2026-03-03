@@ -34,6 +34,7 @@ source("modules/table_structure_module.R")
 source("modules/data_preview_module.R")
 source("modules/table_compare_module.R")
 source("modules/settings_module.R")
+source("modules/backup_module.R")
 
 # ============================================================
 # 3. Theme
@@ -365,7 +366,16 @@ ui <- page_navbar(
   ),
 
   # ----------------------------------------------------------------
-  # Tab 5 – Settings
+  # Tab 6 – Backup & Restore
+  # ----------------------------------------------------------------
+  nav_panel(
+    title = tagList(icon("hard-drive"), " Backup"),
+    value = "backup",
+    backupUI("backup")
+  ),
+
+  # ----------------------------------------------------------------
+  # Tab 7 – Settings
   # ----------------------------------------------------------------
   nav_panel(
     title = tagList(icon("gear"), " Settings"),
@@ -558,6 +568,15 @@ server <- function(input, output, session) {
   # ------------------------------------------------------------------
 
   tableCompareServer("compare", dev_con = dev_con, prod_con = prod_con)
+
+  # ------------------------------------------------------------------
+  # Backup & Restore module
+  # ------------------------------------------------------------------
+
+  backupServer(
+    "backup",
+    connections = list(DEV = dev_con, UAT = uat_con, PROD = prod_con)
+  )
 
   # ------------------------------------------------------------------
   # Settings module
